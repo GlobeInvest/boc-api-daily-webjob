@@ -23,7 +23,6 @@ total_trans = 0
 i=0
 accoun_run=0
 EmailObj=SendEmails()
-# EmailObj = SendEmails('', '', ['alexandros.mina@globeinvest.com'])
 
 if i==0:  
     EmailObj.SendEmail("BOC API started : "+str(datetime.now()),'')   
