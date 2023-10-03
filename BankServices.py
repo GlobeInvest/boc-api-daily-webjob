@@ -158,36 +158,33 @@ class Bank_API():
 
         if (res.status_code==200):
             Account.to_update=1
-            respond=json.loads(res.text)
-            Account.Raw_Transactions=respond['transaction']
-            Account.Currency=str(respond['account']['currency'])
-            Account.Company=respond['account']['accountName']
+            response=json.loads(res.text)
+            Account.Raw_Transactions=response['transaction']
+            Account.Currency=str(response['account']['currency'])
+            Account.Company=response['account']['accountName']
 
-            balances_obj = respond['account']['balances']
+            balances_obj = response['account']['balances']
             Account.available_balance=self.get_balance_from_account_balances(balances_json=balances_obj, balance_type='available')#float((respond['account']['balances'])[0]['amount'] or 0)
             Account.current_balance=self.get_balance_from_account_balances(balances_json=balances_obj, balance_type='current')#float((respond['account']['balances'])[1]['amount'] or 0)
             Account.start_balance=self.get_balance_from_account_balances(balances_json=balances_obj, balance_type='start')#float((respond['account']['balances'])[2]['amount'] or 0)
             Account.end_balance=self.get_balance_from_account_balances(balances_json=balances_obj, balance_type='end')#float((respond['account']['balances'])[3]['amount'] or 0)
             
-            Account.account_type=respond['account']['accountType']
+            Account.account_type=response['account']['accountType']
             Account.run_type='Transactions'
 
         elif (res.status_code>=400 and res.status_code<500): ##No transactions    
-            respond=json.loads(res.text)
+            response=json.loads(res.text)
             Account.to_update=1
             Account.check_expration_date()
             if Account.subscription_expire_date<=datetime.today().date():     
                 EmailObj.SendEmail("[BOC - 400 - ERROR] - Account need to reactivate "+Account.IBAN,'')
                 return 1
-            elif 'error' in respond:
-                if len(respond['error'])==0:
-                    if 'No transactions found' in respond['error']['description']:
-                        print(f"[WARN] - {res.status_code} - GET transactions - NO transactions\nfrom: {From_Date}\nto: {To_date}\naccount: {Account.IBAN}\nresponse: {res.text}")
-                    else:
-                        print(f"[WARN] - {res.status_code} - GET transactions \nfrom: {From_Date}\nto: {To_date}\naccount: {Account.IBAN}\nresponse: {res.text}")
-                        # EmailObj.SendEmail(f"[WARN] - BOC RUN - {res.status_code} - GET transactions", f"from: {From_Date}\nto: {To_date}\naccount: {Account.IBAN}\nresponse: {res.text}")
+            elif 'error' in response:
+                if type(response['error']) is dict and 'description' in response['error'] and 'No transactions found' in response['error']['description']:
+                    print(f"[WARN] - {res.status_code} - GET transactions - NO TRANSACTIONS FOUND", f"from: {From_Date}\nto: {To_date}\naccount: {Account.IBAN}\nresponse: {res.text}")
                 else:
-                    print(f"[WARN] - {res.status_code} - GET transactions - error list - \nfrom: {From_Date}\nto: {To_date}\naccount: {Account.IBAN}\nresponse: {res.text}")
+                    print(f"[WARN] - {res.status_code} - GET transactions - error ", f"from: {From_Date}\nto: {To_date}\naccount: {Account.IBAN}\nresponse: {res.text}")
+                    EmailObj.SendEmail(f"[WARN] - BOC RUN - {res.status_code} - GET transactions", f"from: {From_Date}\nto: {To_date}\naccount: {Account.IBAN}\nresponse: {res.text}")
                 return 1
         elif (res.status_code>=500): ##Interal error
                 EmailObj.SendEmail("[BOC - 500 - ERROR] - status_code "+Account.IBAN,res.text+" "+url)
